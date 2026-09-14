@@ -1,16 +1,14 @@
 from pathlib import Path
 
-# Imports and Database Connection
-# Used to load the libraries and connect to the SQLite database.
 
+# Imports and Database Connection
 import sqlite3
 import pandas as pd
 DB_PATH = Path(__file__).resolve().parent / "data" / "comm_log.db"
 conn = sqlite3.connect(DB_PATH)
 
-# Load the Source Tables
-# Used to load the campaign and communication-log tables into pandas for inspection.
 
+# Load the Source Tables
 campaign = pd.read_sql_query(
     "SELECT * FROM campaign",
     conn
@@ -20,17 +18,15 @@ comm_log = pd.read_sql_query(
     conn
 )
 
-# Initial Data Inspection
-# Used to inspect the raw campaign and communication-log records.
 
+# Initial Data Inspection
 print("CAMPAIGN")
 print(campaign)
 print("\nCOMMUNICATION LOG")
 print(comm_log)
 
-# Query 1: Naive Row Count
-# Used to establish the starting point for the reconciliation.
 
+# Query 1: Naive Row Count
 query1 = """
 SELECT COUNT(*) AS total_rows
 FROM communication_log;
@@ -38,9 +34,8 @@ FROM communication_log;
 result1 = pd.read_sql_query(query1, conn)
 print(result1)
 
-# Query 2: Attempts by Campaign
-# Used to see how many send attempts belong to each campaign.
 
+# Query 2: Attempts by Campaign
 query2 = """
 SELECT
     communication_id,
@@ -52,9 +47,8 @@ ORDER BY communication_id;
 result2 = pd.read_sql_query(query2, conn)
 print(result2)
 
-# Query 3: Campaign-Level Summary
-# Used to compare campaign status with its send attempts.
 
+# Query 3: Campaign-Level Summary
 query3 = """
 SELECT
     c.id,
@@ -77,9 +71,8 @@ ORDER BY c.id;
 result3 = pd.read_sql_query(query3, conn)
 print(result3)
 
-# Query 4: Family A Retry Chain
-# Used to inspect the three-level retry chain 9001 → 9002 → 9003.
 
+# Query 4: Family A Retry Chain
 query = """
 SELECT
     communication_id,
@@ -93,9 +86,8 @@ ORDER BY customer_id, sent_time;
 result4 = pd.read_sql_query(query, conn)
 print(result4.to_string(index=False))
 
-# Query 5: Family B Retry Chain
-# Used to inspect the retry chain 9201 → 9202.
 
+# Query 5: Family B Retry Chain
 query5 = """
 SELECT
     cl.communication_id,
@@ -111,9 +103,8 @@ ORDER BY
 result5 = pd.read_sql_query(query5, conn)
 print(result5.to_string(index=False))
 
-# Query 6: Standalone Campaign
-# Used to verify repeated sends in standalone campaign 9101.
 
+# Query 6: Standalone Campaign
 query6 = """
 SELECT
     communication_id,
@@ -127,9 +118,8 @@ ORDER BY sent_time;
 result6 = pd.read_sql_query(query6, conn)
 print(result6.to_string(index=False))
 
-# Query 7: Reconciliation Bridge
-# Used to show the adjustments from the naive count to the final target_base.
 
+# Query 7: Reconciliation Bridge
 query7 = """
 WITH RECURSIVE campaign_chain AS (
     SELECT
@@ -235,9 +225,8 @@ result7 = pd.read_sql_query(query, conn)
 print("\nRECONCILIATION BRIDGE")
 print(result7.to_string(index=False))
 
-# Query 8: Campaign Validation
-# Used to validate campaign-level counts and eligibility states.
 
+# Query 8: Campaign Validation
 query8 = """
 SELECT
     c.id,
@@ -261,9 +250,8 @@ ORDER BY c.id;
 result8 = pd.read_sql_query(query8, conn)
 print(result8.to_string(index=False))
 
-# Query 9: Final Target Base
-# Used to independently calculate the final reconciled target_base.
 
+# Query 9: Final Target Base
 query9 = """
 WITH RECURSIVE campaign_chain AS (
     SELECT
@@ -346,9 +334,8 @@ result9 = pd.read_sql_query(query9, conn)
 print("\nFINAL TARGET BASE")
 print(result9.to_string(index=False))
 
-# Validation 1: Naive Count
-# Used to confirm the 30-row starting point.
 
+# Validation 1: Naive Count
 query_validation1 = """
 SELECT COUNT(*) AS total_send_attempts
 FROM communication_log
@@ -361,9 +348,8 @@ result_validation1 = pd.read_sql_query(query_validation1, conn)
 print("\nVALIDATION 1 - Naive Count of Communication Log Rows")
 print(result_validation1.to_string(index=False))
 
-# Validation 2: Ineligible Campaigns
-# Used to confirm the four excluded sends from campaign 9004.
 
+# Validation 2: Ineligible Campaigns
 query_validation2 = """
 SELECT
     c.id,
@@ -386,9 +372,8 @@ result_validation2 = pd.read_sql_query(query_validation2, conn)
 print("\nVALIDATION 2 - Ineligible Campaigns")
 print(result_validation2.to_string(index=False))
 
-# Validation 3: Retry Chains
-# Used to confirm the campaign parent-child relationships.
 
+# Validation 3: Retry Chains
 query_validation3 = """
 SELECT
     id AS campaign_id,
@@ -403,9 +388,8 @@ result_validation3 = pd.read_sql_query(query_validation3, conn)
 print("\nVALIDATION 3 - Retry Chains")
 print(result_validation3.to_string(index=False))
 
-# Validation 4: Retry-Family Counts
-# Used to confirm the eligible send attempts and distinct customers for each retry family.
 
+# Validation 4: Retry-Family Counts
 query_validation4 = """
 WITH RECURSIVE campaign_chain AS (
     SELECT
@@ -452,7 +436,6 @@ result_validation4 = pd.read_sql_query(query_validation4, conn)
 print("\nVALIDATION 4 - Retry-Family Counts")
 print(result_validation4.to_string(index=False))
 
-# Close Database Connection
-# Used to close the SQLite connection cleanly.
 
+# Close Database Connection
 conn.close()
